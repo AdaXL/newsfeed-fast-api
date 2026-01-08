@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends,Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud import news
@@ -32,10 +32,38 @@ async def get_news_list(
 
     return {
         "code": 200,
-        "message": "get news list",
+        "message": "get news list success.",
         "data": {
             "list": news_list,
             "total": total,
             "hasMore": has_more
+        }
+    }
+
+@router.get("/detail")
+async def read_news_detail(
+        news_id: int = Query(alias="newsId"),
+        db: AsyncSession = Depends(get_db),
+):
+    news_detail = await news.get_news_details(db, news_id)
+    if not news_detail:
+        raise HTTPException(status_code=404, detail="News not found.")
+
+    views_res = await news.increase_news_views(db, news_id)
+    if not views_res:
+        raise HTTPException(status_code=500, detail="Update views failed.")
+
+    return {
+        "code": 200,
+        "message": "get news details success.",
+        "data": {
+            "id": news_id,
+            "title": news_detail.title,
+            "content": news_detail.content,
+            "image": news_detail.image,
+            "author": news_detail.author,
+            "category": news_detail.category_id,
+            "views": news_detail.views,
+            "publishTime": news_detail.publish_time,
         }
     }
