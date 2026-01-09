@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsFeed</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --sidebar-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        header {
+            background-color: #ffffff;
+            color: var(--text-main);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        #container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            padding: 1.5rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        #sidebar h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .category-btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 0.5rem;
+            color: var(--text-main);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .category-btn:hover {
+            background-color: #f9fafb;
+            color: var(--primary-color);
+        }
+
+        .category-btn.active {
+            background-color: #eff6ff;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        #main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .main-content-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #current-category-title {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.875rem;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: -0.025em;
+        }
+
+        #news-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .news-item {
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .news-item:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .news-image-container {
+            width: 100%;
+            height: 200px;
+            background-color: #e5e7eb;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .news-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .news-item:hover .news-image-container img {
+            transform: scale(1.05);
+        }
+
+        .news-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            background-color: #f3f4f6;
+        }
+
+        .news-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .news-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: 0 0 0.75rem 0;
+            line-height: 1.4;
+            color: var(--text-main);
+            /* Limit to 2 lines */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        /* Modal styles */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #modal.show {
+            opacity: 1;
+        }
+
+        #modal-content {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 1rem;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #modal.show #modal-content {
+            transform: scale(1);
+        }
+
+        #close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            line-height: 1;
+            transition: all 0.2s;
+            z-index: 20;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        #close-btn:hover {
+            background: white;
+            transform: rotate(90deg);
+        }
+
+        .modal-header {
+            padding: 2.5rem 2.5rem 1.5rem 2.5rem;
+        }
+
+        #detail-title {
+            margin: 0 0 1rem 0;
+            font-size: 2rem;
+            line-height: 1.2;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        #detail-meta {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        #detail-image {
+            width: 100%;
+            max-height: 450px;
+            object-fit: cover;
+            display: block;
+        }
+
+        #detail-body {
+            padding: 2.5rem;
+            line-height: 1.8;
+            color: #374151;
+            font-size: 1.1rem;
+        }
+
+        #related-news-section {
+            padding: 0 2.5rem 2.5rem 2.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        #related-news-section h3 {
+            font-size: 1.25rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+
+        .related-news-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .related-news-item {
+            cursor: pointer;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            transition: transform 0.2s;
+        }
+
+        .related-news-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .related-news-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .related-news-item .title {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1f2937;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background-color: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>NewsFeed</h1>
+    <div style="font-size: 0.9rem; color: var(--text-secondary);">FastAPI Project</div>
+</header>
+
+<div id="container">
+    <div id="sidebar">
+        <h3>Categories</h3>
+        <div id="category-list">
+            <div style="padding: 1rem; color: var(--text-secondary); font-size: 0.9rem;">Loading...</div>
+        </div>
+    </div>
+    <div id="main">
+        <div class="main-content-wrapper">
+            <h2 id="current-category-title">Select a category</h2>
+            <div id="news-list"></div>
+            <div class="pagination" id="pagination" style="display: none;">
+                <button id="prev-page" onclick="changePage(-1)">Previous</button>
+                <span id="page-info" style="display: flex; align-items: center;">Page 1</span>
+                <button id="next-page" onclick="changePage(1)">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal">
+    <div id="modal-content">
+        <div id="close-btn">&times;</div>
+        <img id="detail-image" src="" alt="News Image" style="display:none;">
+        <div class="modal-header">
+            <h2 id="detail-title"></h2>
+            <div id="detail-meta"></div>
+        </div>
+        <div id="detail-body"></div>
+        <div id="related-news-section">
+            <h3>Related News</h3>
+            <div class="related-news-list" id="related-news-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://127.0.0.1:8000'; // Adjust if needed
+
+    let currentCategoryId = null;
+    let currentPage = 1;
+    let pageSize = 20;
+    let hasMore = false;
+
+    async function fetchCategories() {
+        try {
+            const response = await fetch(`${API_BASE}/api/news/categories`);
+            const result = await response.json();
+            if (result.code === 200) {
+                renderCategories(result.data);
+                if (result.data.length > 0) {
+                    loadCategory(result.data[0]);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            document.getElementById('category-list').innerHTML = '<div style="color: red; padding: 0.5rem;">Error loading categories.</div>';
+        }
+    }
+
+    function renderCategories(categories) {
+        const container = document.getElementById('category-list');
+        container.innerHTML = '';
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'category-btn';
+            btn.innerText = cat.name;
+            btn.onclick = () => loadCategory(cat);
+            btn.dataset.id = cat.id;
+            container.appendChild(btn);
+        });
+    }
+
+    function loadCategory(category) {
+        currentCategoryId = category.id;
+        currentPage = 1;
+        document.getElementById('current-category-title').innerText = category.name;
+
+        // Update active state
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            if (parseInt(btn.dataset.id) === category.id) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        fetchNewsList(category.id, currentPage);
+    }
+
+    async function fetchNewsList(categoryId, page) {
+        const listContainer = document.getElementById('news-list');
+        listContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-secondary);">Loading news...</div>';
+
+        try {
+            const response = await fetch(`${API_BASE}/api/news/list?categoryId=${categoryId}&page=${page}&pageSize=${pageSize}`);
+            const result = await response.json();
+            if (result.code === 200) {
+                hasMore = result.data.hasMore;
+                renderNewsList(result.data.list);
+                updatePagination();
+            }
+        } catch (error) {
+            console.error('Error fetching news:', error);
+            listContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: red;">Error loading news.</div>';
+        }
+    }
+
+    function renderNewsList(newsList) {
+        const container = document.getElementById('news-list');
+        container.innerHTML = '';
+        if (newsList.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-secondary);">No news in this category.</div>';
+            return;
+        }
+
+        newsList.forEach(news => {
+            const item = document.createElement('div');
+            item.className = 'news-item';
+            item.onclick = () => fetchNewsDetail(news.id);
+
+            const imgHtml = news.image
+                ? `<div class="news-image-container"><img src="${news.image}" alt="img"></div>`
+                : `<div class="news-image-container"><div class="news-image-placeholder">No Image</div></div>`;
+
+            const dateStr = new Date(news.publish_time).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+            item.innerHTML = `
+                ${imgHtml}
+                <div class="news-content">
+                    <div class="news-title">${news.title}</div>
+                    <div class="news-meta">
+                        <span>${news.views} views</span>
+                        <span>${dateStr}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function updatePagination() {
+        const pagination = document.getElementById('pagination');
+        pagination.style.display = 'flex';
+        document.getElementById('page-info').innerText = `Page ${currentPage}`;
+        document.getElementById('prev-page').disabled = currentPage <= 1;
+        document.getElementById('next-page').disabled = !hasMore;
+    }
+
+    function changePage(delta) {
+        const newPage = currentPage + delta;
+        if (newPage < 1) return;
+        currentPage = newPage;
+        fetchNewsList(currentCategoryId, currentPage);
+    }
+
+    async function fetchNewsDetail(newsId) {
+        try {
+            const response = await fetch(`${API_BASE}/api/news/detail?newsId=${newsId}`);
+            const result = await response.json();
+            if (result.code === 200) {
+                showModal(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching detail:', error);
+            alert('Failed to load news detail.');
+        }
+    }
+
+    function showModal(news) {
+        document.getElementById('detail-title').innerText = news.title;
+
+        const dateStr = new Date(news.publishTime).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+        document.getElementById('detail-meta').innerHTML = `
+            <span><strong>Author:</strong> ${news.author || 'Unknown'}</span>
+            <span>&bull;</span>
+            <span>${news.views} views</span>
+            <span>&bull;</span>
+            <span>${dateStr}</span>
+        `;
+
+        document.getElementById('detail-body').innerText = news.content;
+
+        const img = document.getElementById('detail-image');
+        if (news.image) {
+            img.src = news.image;
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+        }
+
+        // Render related news
+        const relatedContainer = document.getElementById('related-news-list');
+        relatedContainer.innerHTML = '';
+        if (news.relatedNews && news.relatedNews.length > 0) {
+            document.getElementById('related-news-section').style.display = 'block';
+            news.relatedNews.forEach(related => {
+                const item = document.createElement('div');
+                item.className = 'related-news-item';
+                item.onclick = (e) => {
+                    e.stopPropagation(); // Prevent modal close if clicked
+                    fetchNewsDetail(related.id);
+                };
+
+                const imgHtml = related.image
+                    ? `<img src="${related.image}" alt="img">`
+                    : `<div style="height:120px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:0.8rem;">No Image</div>`;
+
+                item.innerHTML = `
+                    ${imgHtml}
+                    <div class="title">${related.title}</div>
+                `;
+                relatedContainer.appendChild(item);
+            });
+        } else {
+            document.getElementById('related-news-section').style.display = 'none';
+        }
+
+        const modal = document.getElementById('modal');
+        modal.style.display = 'flex';
+        // Trigger reflow
+        modal.offsetHeight;
+        modal.classList.add('show');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('modal');
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+
+    // Modal close logic
+    document.getElementById('close-btn').onclick = closeModal;
+    window.onclick = (event) => {
+        if (event.target == document.getElementById('modal')) {
+            closeModal();
+        }
+    };
+
+    // Initial load
+    fetchCategories();
+</script>
+
+</body>
+</html>

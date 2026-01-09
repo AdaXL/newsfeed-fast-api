@@ -53,6 +53,8 @@ async def read_news_detail(
     if not views_res:
         raise HTTPException(status_code=500, detail="Update views failed.")
 
+    related_news = await news.get_related_news(db, news_detail.category_id, news_id)
+
     return {
         "code": 200,
         "message": "get news details success.",
@@ -62,8 +64,9 @@ async def read_news_detail(
             "content": news_detail.content,
             "image": news_detail.image,
             "author": news_detail.author,
-            "category": news_detail.category_id,
+            "categoryId": news_detail.category_id,
             "views": news_detail.views,
             "publishTime": news_detail.publish_time,
+            "relatedNews": related_news
         }
     }
